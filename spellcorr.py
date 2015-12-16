@@ -41,6 +41,11 @@ class SpellCorr:
         corrections.sort(key=lambda word: -word[1])
         return list(filter(lambda x: x[1] > 0, corrections))
 
+    def wordFrequencyCorrectionsForWord(self, word, distance):
+        corrections = [(word, self.wordFrequencies[(word,)]) for word in self.correctionsForWord(word, distance)]
+        corrections.sort(key=lambda x: -x[1])
+        return corrections
+
     def correctionsForWords(self, words, index):
         bigramCorrections = self.bigramCorrectionsForWords(words, index, 3)
         if len(bigramCorrections) > 0:
@@ -55,7 +60,7 @@ class SpellCorr:
 
 
 if __name__ == '__main__':
-    spellCorr = SpellCorr(word_tokenize(open('korpus.txt').read().lower()))
+    spellCorr = SpellCorr(word_tokenize(open('text.txt').read().lower()))
     #sample1 = "Det är första gngen i Statoils histoyia oljebolaget vidtar en sådan åtgärd."
 
     sample1 = """En tjugoprig tjej stpr vir kassan ocj ska betal när expediten ber om legimitation.
@@ -70,6 +75,10 @@ if __name__ == '__main__':
     for i in range(len(tokens)):
         print(tokens[i], end=" ")
         if not spellCorr.isWordCorrect(tokens[i]):
-            print(spellCorr.correctionsForWords(tokens, i)[:8])
+            print('ngrams: ', end=": ")
+            print(spellCorr.bigramCorrectionsForWords(tokens, i, 3)[:8], end=", ")
+
+            print('word frequency: ', end=": ")
+            print(spellCorr.wordFrequencyCorrectionsForWord(tokens[i], 1)[:8])
         else:
             print()
