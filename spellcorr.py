@@ -2,7 +2,6 @@ import re, collections
 import sys
 from nltk.tokenize import word_tokenize
 from nltk.metrics import edit_distance
-from nltk.util import ngrams
 
 class NGram:
 
@@ -25,14 +24,14 @@ class SpellCorr:
         self.wordFrequencies = NGram(1, tokens)
         self.ngrams = NGram(2, tokens)
 
-    def correctionsForWord(self, word):
+    def correctionsForWord(self, word, distance):
         if word in self.tokens: return []
-        return [token for token in self.tokens if edit_distance(token, word) < 3]
+        return [token for token in self.tokens if edit_distance(token, word) <= distance]
 
     def correctionsForWords(self, words, index):
         if len(words) == 0: return []
         wordToBeCorrected = words[index]
-        corrections = dict([(word, 0) for word in self.correctionsForWord(wordToBeCorrected)])
+        corrections = dict([(word, 0) for word in self.correctionsForWord(wordToBeCorrected, 3)])
 
         n = self.ngrams.n
 
@@ -52,24 +51,27 @@ class SpellCorr:
         corrections.sort(key=lambda word: -word[1])
         return corrections[:8]
 
-spellCorr = SpellCorr(word_tokenize(open('korpus.txt').read().lower()))
+
+if __name__ == '__main__':
+
+    spellCorr = SpellCorr(word_tokenize(open('korpus.txt').read().lower()))
 
 
-#sample1 = "Det är första gngen i Statoils histoyia oljebolaget vidtar en sådan åtgärd."
+    #sample1 = "Det är första gngen i Statoils histoyia oljebolaget vidtar en sådan åtgärd."
 
-sample1 = """En tjugoprig tjej stpr vir kassan ocj ska betal när expediten ber om legimitation.
-Nähä men det kanske går bra ändp?
-Ja, men skrv ut det under det nu dp sp vämför vi sen.
-Tjejen och expediten tittar undrande op kollegan som lugnt fortsätter att vika kläder.
-Ja om du skriver under kvrror sp jab vu jämföra ed din anamnteckning på kortet."""
+    sample1 = """En tjugoprig tjej stpr vir kassan ocj ska betal när expediten ber om legimitation.
+    Nähä men det kanske går bra ändp?
+    Ja, men skrv ut det under det nu dp sp vämför vi sen.
+    Tjejen och expediten tittar undrande op kollegan som lugnt fortsätter att vika kläder.
+    Ja om du skriver under kvrror sp jab vu jämföra ed din anamnteckning på kortet."""
 
 
-word_tokenize(sample1)
+    word_tokenize(sample1)
 
-#print(spellCorr.correctionsForWords(["vad", "tr"]))
-#print(spellCorr.findErrors(word_tokenize(sample1.lower())))
+    #print(spellCorr.correctionsForWords(["vad", "tr"]))
+    #print(spellCorr.findErrors(word_tokenize(sample1.lower())))
 
-tokens = word_tokenize(sample1.lower())
-for i in range(len(tokens)):
-    print(tokens[i], end=" ")
-    print(spellCorr.correctionsForWords(tokens, i))
+    tokens = word_tokenize(sample1.lower())
+    for i in range(len(tokens)):
+        print(tokens[i], end=" ")
+        print(spellCorr.correctionsForWords(tokens, i))
