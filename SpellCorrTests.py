@@ -19,9 +19,17 @@ class SpellCorrTests(unittest.TestCase):
         self.assertEqual(bigram[('monkez', 'oncz')], 0)
 
     def test_spellcorr(self):
-        spellCorr = SpellCorr(word_tokenize("monkey money mega monster"))
+        spellCorr = SpellCorr(word_tokenize("money mega monster, a monkey once stole a monkey, money once"))
         self.assertEqual(spellCorr.correctionsForWord('monkez', 1), ['monkey'])
         self.assertEqual(set(spellCorr.correctionsForWord('monkez', 2)), set(['monkey', 'money']))
+
+        bigramCorrections = spellCorr.bigramCorrectionsForWords(word_tokenize('once upon a time a monxey once'), 5, 1)
+        self.assertEqual(len(bigramCorrections), 2)
+        self.assertEqual(bigramCorrections[0][0], 'monkey')
+        self.assertEqual(bigramCorrections[0][1], 3)
+
+        self.assertEqual(bigramCorrections[1][0], 'money')
+        self.assertEqual(bigramCorrections[1][1], 1)
 
 
 if __name__ == '__main__':
