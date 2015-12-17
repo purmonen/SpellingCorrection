@@ -1,7 +1,9 @@
 import re, collections
 import sys
+import itertools
 from nltk.tokenize import word_tokenize
 from nltk.metrics import edit_distance
+from time import time
 
 class NGram:
 
@@ -24,15 +26,36 @@ class SpellCorr:
         self.wordFrequencies = NGram(1, tokens)
         self.trigrams = NGram(3, tokens)
         self.ngrams = NGram(2, tokens)
-        print("Inited SpellCorr with " + str(self.tokens) + " tokens")
+        print("Inited SpellCorr with " + str(len(self.tokens)) + " tokens")
 
-    def correctionsForWord(self, word, distance):
-        return [token for token in self.tokens if edit_distance(token, word) <= distance]
+
+
+
+    def edits1(self, word):
+        alphabet = 'abcdefghijklmnopqrstuvwxyzåäö'
+        s = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+        deletes    = [a + b[1:] for a, b in s if b]
+        transposes = [a + b[1] + b[0] + b[2:] for a, b in s if len(b)>1]
+        replaces   = [a + c + b[1:] for a, b in s for c in alphabet if b]
+        inserts    = [a + c + b     for a, b in s for c in alphabet]
+        return set(deletes + transposes + replaces + inserts)
+
+    def edits2(self, word):
+        corrections = self.edits1(word)
+        return set(itertools.chain.from_iterable([self.edits1(correction) for correction in corrections]))
+
+    def correctionsForWord(self, wordToBeCorrected, distance):
+        if distance == 1:
+            return [word for word in self.edits1(wordToBeCorrected) if word in self.tokens]
+        elif distance == 2:
+            return [word for word in self.edits2(wordToBeCorrected) if word in self.tokens]
+        return [token for token in self.tokens if edit_distance(token, wordToBeCorrected) <= distance]
 
     def ngramCorrectionsForWords(self, ngrams, words, index, distance):
         if len(words) == 0: return []
         wordToBeCorrected = words[index]
         corrections = dict([(word, 0) for word in self.correctionsForWord(wordToBeCorrected, distance)])
+
         n = ngrams.n
         for i in range(n):
             context = words[index+i-n+1:index+i+1]
@@ -75,7 +98,26 @@ def countErrors(correct, test):
     return errors
 
 if __name__ == '__main__':
+
+
     spellCorr = SpellCorr(word_tokenize(open('text.txt').read().lower()))
+
+
+    now = time()
+    #corrections = spellCorr.edits1('giraxen')
+    edit2 = spellCorr.edits2('giraxen')
+    print([x for x in edit2 if x in spellCorr.tokens])
+    print(time()-now)
+
+    now = time()
+    print(spellCorr.correctionsForWord('giraxen', 2))
+    print(time() - now)
+    #print(len(set(itertools.chain.from_iterable([spellCorr.edits1(correction) for correction in corrections]))))
+    #print(sum([len(spellCorr.edits1(correction)) for correction in corrections]))
+
+    #print(spellCorr.correctionsForWord('giraxen', 1))
+
+
     #sample1 = "Det är första gngen i Statoils histoyia oljebolaget vidtar en sådan åtgärd."
 
     sample1 = """
@@ -89,12 +131,12 @@ if __name__ == '__main__':
 
     sample2 = """Tyvär stog dem brevid oss tillsvidare men det värkade iallafalll vara det ända sett vi behövde inteagera med varandra."""
     correct2 = """Tyvärr stod de brevid oss tillsvidare men det verkade iallafalll vara det enda sätt vi behövde interagera med varandra."""
-    
+
     sample3 = """kadad frågar du dig hela tiden: ska jag spela eller gå av, och hur mycket är du beredd att offra för den här matchen? inte för att du vet, det går inte att veta. det är som roulette, du får satsa och hpoppas du inte förlorar allt: en hel säsong, eller vad som helst. Men jag hade stannat länge på plan för  att tränaren ville det och för att jag trodde jag kunde betyda någort för lahget. men det enda som hgänd var att skadan blev värre och att vi förlorade men ett - noll. jag hade satsat min hälsa och itne vunnit ett skti, och de engelska fansen på plats skrek åt mig. Jag och den engelska publiken och pressen har aldrig gått ihop riktigt och nu kallades jag "grinig primadonna" och  "europas mäst överskattade spelare" och normal triggas jag bara av sånt. Det är som när föräldrarna skrev på listor för att få bort mig. Jag kämpar ännu hjårdare och visar de djävlarnba. Men nu hade jag ingen kropp att ge igen med. Jag hade ont och stämningen i laget var usel. Allt var som förbytt. Hela den gamla harmonin och optimismen var flrsvunna. Något är fel i inter, skrev journalisterna och Roberto Mansisi förklarade att han skulle lämna klubben. Han skulel sticka sade han. Därefter tog han tillbaka det. Plötsligt skulel han inte sticka alls, och förtroendet fölr honom minskarde. Vad ville han? Som tränare kan du inte vela poå det viset: Jag stannar inte. Jag stannar. Det är oseriöst, och nu fortsatte vi att tappa poäng.
 Vi hade haft ett stort försprång i ligatoppen, men nu krympte det hela tiden. Vi fick bara ett - ett mot genoa och förlorade hemma mot Jeventus. Jag var mde då också. jag, min idiot, hade inte kjunna säga nej. Men efteråt hade jag så ont att jag knappt kunde gå, occh jag mins att jag kom in i omklädningsrummet och ville riva ner hela djävla inredningen och skrek åt mansin och var helt galen. Det fick vara nog nu. Jag måste via och g å rehab."""
     correct3 = """Skadad frågar du dig hela tiden: ska jag spela eller gå av, och hur mycket är du beredd att offra för den här matchen? inte för att du vet, det går inte att veta. det är som roulette, du får satsa och hoppas du inte förlorar allt: en hel säsong, eller vad som helst. Men jag hade stannat länge på plan för att tränaren ville det och för att jag trodde jag kunde betyda något för laget. Men det enda som hände var att skadan blev värre och att vi förlorade med ett - noll. jag hade satsat min hälsa och inte vunnit ett skit, och de engelska fansen på plats skrek åt mig. Jag och den engelska publiken och pressen har aldrig gått ihop riktigt och nu kallades jag "grinig primadonna" och  "europas mest överskattade spelare" och normal triggas jag bara av sånt. Det är som när föräldrarna skrev på listor för att få bort mig. Jag kämpar ännu hårdare och visar de jävlarnba. Men nu hade jag ingen kropp att ge igen med. Jag hade ont och stämningen i laget var usel. Allt var som förbytt. Hela den gamla harmonin och optimismen var försvunnen. Något är fel i inter, skrev journalisterna och Roberto Mansisi förklarade att han skulle lämna klubben. Han skulle sticka sade han. Därefter tog han tillbaka det. Plötsligt skulle han inte sticka alls, och förtroendet för honom minskarde. Vad ville han? Som tränare kan du inte vela poå det viset: Jag stannar inte. Jag stannar. Det är oseriöst, och nu fortsatte vi att tappa poäng.
 Vi hade haft ett stort försprång i ligatoppen, men nu krympte det hela tiden. Vi fick bara ett - ett mot genoa och förlorade hemma mot Jeventus. Jag var med då också. jag, min idiot, hade inte kjunna säga nej. Men efteråt hade jag så ont att jag knappt kunde gå, och jag minns att jag kom in i omklädningsrummet och ville riva ner hela jävla inredningen och skrek åt mansin och var helt galen. Det fick vara nog nu. Jag måste vila och gå på rehab."""
-    
+
     sample = sample3
     correct = correct3
 
@@ -133,7 +175,7 @@ Vi hade haft ett stort försprång i ligatoppen, men nu krympte det hela tiden. 
             wfCorrectionsWithDistance2 = spellCorr.wordFrequencyCorrectionsForWord(tokens[i], 2)
             print('    wf2: ', end="")
             print(wfCorrectionsWithDistance2[:5])
-            
+
             print('    Cor: ' + correctTokens[i])
 
             bigramCorrections = (bigramCorrectionsWithDistance1 + bigramCorrectionsWithDistance2)
@@ -167,5 +209,3 @@ Vi hade haft ett stort försprång i ligatoppen, men nu krympte det hela tiden. 
     print('Super corrections')
     print(' '.join(superTokens))
     print(str(countErrors(correctTokens, superTokens))+' errors')
-    
-    
