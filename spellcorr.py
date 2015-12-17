@@ -4,6 +4,8 @@ import itertools
 from nltk.tokenize import word_tokenize
 from nltk.metrics import edit_distance
 from time import time
+import os.path
+import pickle
 
 class NGram:
 
@@ -99,8 +101,16 @@ def countErrors(correct, test):
 
 if __name__ == '__main__':
 
+    fileName = 'text.txt'
+    pickleFileName = fileName + '.pickle'
 
-    spellCorr = SpellCorr(word_tokenize(open('text.txt').read().lower()))
+
+    if os.path.exists(pickleFileName):
+        tokens = pickle.load(open(pickleFileName, 'rb'))
+    else:
+        tokens = word_tokenize(open(fileName).read().lower())
+        pickle.dump(tokens, open(pickleFileName,'wb'))
+    spellCorr = SpellCorr(tokens)
 
 
     now = time()
