@@ -9,7 +9,7 @@ import pickle
 
 class NGram:
 
-    def __init__(self, n, tokens):
+    def __init__(self, n: int, tokens: [str]):
         self.n = n
         self.ngrams = {}
         for i in range(n-1, len(tokens)):
@@ -23,7 +23,7 @@ class NGram:
 
 class SpellCorr:
 
-    def __init__(self, tokens):
+    def __init__(self, tokens: [str]):
         self.tokens = set(tokens)
         self.wordFrequencies = NGram(1, tokens)
         self.trigrams = NGram(3, tokens)
@@ -31,9 +31,7 @@ class SpellCorr:
         print("Inited SpellCorr with " + str(len(self.tokens)) + " tokens")
 
 
-
-
-    def edits1(self, word):
+    def edits1(self, word: str):
         alphabet = 'abcdefghijklmnopqrstuvwxyzåäö'
         s = [(word[:i], word[i:]) for i in range(len(word) + 1)]
         deletes    = [a + b[1:] for a, b in s if b]
@@ -42,7 +40,7 @@ class SpellCorr:
         inserts    = [a + c + b     for a, b in s for c in alphabet]
         return set(deletes + transposes + replaces + inserts)
 
-    def edits2(self, word):
+    def edits2(self, word: str):
         corrections = self.edits1(word)
         return set(itertools.chain.from_iterable([self.edits1(correction) for correction in corrections]))
 
@@ -72,7 +70,7 @@ class SpellCorr:
     def trigramCorrectionsForWords(self, words, index, distance):
         return self.ngramCorrectionsForWords(self.trigrams, words, index, distance)
 
-    def bigramCorrectionsForWords(self, words, index, distance):
+    def bigramCorrectionsForWords(self, words, index, distance: str):
         return self.ngramCorrectionsForWords(self.ngrams, words, index, distance)
 
     def wordFrequencyCorrectionsForWord(self, word, distance):

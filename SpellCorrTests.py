@@ -8,17 +8,18 @@ class SpellCorrTests(unittest.TestCase):
 
     def test_unigram(self):
         unigram = NGram(1, SpellCorrTests.tokens1)
-        self.assertEqual(unigram[('a',)], 1)
+        self.assertEqual(unigram[('a',)], 2)
         self.assertEqual(unigram[('monkey',)], 2)
         self.assertEqual(unigram[('monkez',)], 0)
 
-    def test_unigram(self):
+    def test_bigram(self):
         bigram = NGram(2, SpellCorrTests.tokens1)
         self.assertEqual(bigram[('a', 'monkey')], 2)
         self.assertEqual(bigram[('monkey', 'once')], 1)
         self.assertEqual(bigram[('monkez', 'oncz')], 0)
 
     def test_spellcorr(self):
+
         spellCorr = SpellCorr(word_tokenize("money mega monster, a monkey once stole a monkey, money once"))
         self.assertEqual(spellCorr.correctionsForWord('monkez', 1), ['monkey'])
         self.assertEqual(set(spellCorr.correctionsForWord('monkez', 2)), set(['monkey', 'money']))
